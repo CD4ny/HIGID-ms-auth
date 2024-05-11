@@ -7,3 +7,4 @@ import { AuthModule } from './auth/auth.module';
   imports: [ConfigModule.forRoot({ isGlobal: true }),  UsersModule, AuthModule,]
 })
 export class AppModule {}
+7

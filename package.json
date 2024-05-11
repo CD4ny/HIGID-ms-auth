@@ -28,6 +28,7 @@
     "@nestjs/swagger": "^7.3.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "faker": "^6.6.6",
     "nestjs-prisma-crud": "1.0.0-beta.18",
     "nodemailer": "^6.9.13",
     "reflect-metadata": "^0.2.0",
@@ -35,6 +36,7 @@
     "swagger-themes": "^1.4.3"
   },
   "devDependencies": {
+    "@faker-js/faker": "^8.4.1",
     "@nestjs/cli": "^10.0.0",
     "@nestjs/schematics": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
@@ -42,8 +44,8 @@
     "@types/jest": "^29.5.2",
     "@types/node": "^20.3.1",
     "@types/supertest": "^6.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.42.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
@@ -65,6 +67,9 @@
       "json",
       "ts"
     ],
+    "moduleNameMapper": {
+      "^faker$": "<rootDir>/node_modules/faker"
+    },
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
