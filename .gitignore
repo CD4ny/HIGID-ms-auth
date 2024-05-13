@@ -133,3 +133,5 @@ pgdata
 .yarn/install-state.gz
 .pnp.*
 .idea/*
+.idea
+/.idea/
