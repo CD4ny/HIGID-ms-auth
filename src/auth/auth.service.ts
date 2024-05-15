@@ -35,15 +35,15 @@ export class AuthService {
       throw new UnauthorizedException();
     }
     const payload = { id: user.id, name: user.name };
-    return {
-      access_token: await this.jwtService.signAsync(payload),
-    };
+    return await this.jwtService.signAsync(payload);
   }
 
   async register(data: RegisterDto) {
-    let found = await this.prisma.user.count({ where: { email: data.email } });
+    let user = await this.prisma.user.findUnique({
+      where: { email: data.email },
+    });
 
-    if (found > 0) {
+    if (user) {
       throw new HttpException('El usuario existe', HttpStatus.BAD_REQUEST);
     }
 
@@ -53,9 +53,10 @@ export class AuthService {
 
     data.token = await this.generateToken(8);
 
-    const user: RegisterDto = await this.prisma.user.create({
+    await this.prisma.user.create({
       data,
     });
+
     const nodemailerOptions: SMTPTransport.Options = {
       service: 'gmail',
       host: process.env.MAIL_HOST,
@@ -104,9 +105,21 @@ export class AuthService {
             </div>`;
   }
 
-  // async confirmAccount(confirmAccountDto: ConfirmAccountDto) {}
+  async confirmAccount(email: string, token: string) {
+    let user = await this.prisma.user.findUnique({ where: { email: email } });
 
-  // async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {}
+    if (!user || (!user?.confirmed && user?.active) || user.token === token)
+      throw new HttpException(
+        'El usuario no existe o el token es incorrecto',
+        HttpStatus.BAD_REQUEST,
+      );
+    else
+      await this.prisma.user.update({
+        where: { email: email },
+        data: { token: null },
+      });
+    return this.login(user);
+  }
 
-  // async resetPassword(resetPasswordDto: ResetPasswordDto) {}
+  async forgotPassword(forgotPasswordDto: LoginDto) {}
 }

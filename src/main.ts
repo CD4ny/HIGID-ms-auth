@@ -6,8 +6,6 @@ import {
   SwaggerModule,
 } from '@nestjs/swagger';
 import 'dotenv/config';
-// @ts-expect-error ts-migrate(2307) FIXME: Cannot find module 'swagger-themes'.
-import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
@@ -23,13 +21,11 @@ async function bootstrap() {
       .setVersion('1.0')
       .build();
 
-    const theme = new SwaggerTheme();
     const customOptions: SwaggerCustomOptions = {
       customSiteTitle: 'Api Docs',
       swaggerOptions: {
         jsonEditor: true,
       },
-      customCss: theme.getBuffer(SwaggerThemeNameEnum.DARK),
     };
     const document = SwaggerModule.createDocument(app, options);
     SwaggerModule.setup('api/docs', app, document, customOptions);
