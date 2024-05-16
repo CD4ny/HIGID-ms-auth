@@ -24,9 +24,9 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const user = await this.usersService.findOneByEmail(loginDto.email);
-    const match = bcrypt.compare(loginDto.password, user.password);
+    const match = await bcrypt.compare(loginDto.password, user.password);
 
-    if (!user || match) {
+    if (!user || !match) {
       throw new HttpException(
         'El usuario no existe o la contraseña es incorrecta.',
         HttpStatus.NOT_FOUND,
