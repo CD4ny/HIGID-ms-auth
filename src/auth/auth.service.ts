@@ -19,7 +19,7 @@ export class AuthService {
     private usersService: UsersService,
   ) {}
 
-  sendMail(email: string, token: string) {
+  async sendMail(email: string, token: string) {
     const nodemailerOptions: SMTPTransport.Options = {
       service: 'gmail',
       host: process.env.MAIL_HOST,
@@ -33,20 +33,18 @@ export class AuthService {
 
     const transporter = nodemailer.createTransport(nodemailerOptions);
 
-    transporter
-      .sendMail({
-        from: {
-          name: 'HIGID',
-          address: process.env.MAIL_USER,
-        },
-        to: email,
-        subject: 'Email de verificación',
-        html: generateEmailConfirmPage(
-          process.env.FRONTEND_HOST +
-            `/confirm-account?email=${email}&token=${token}`,
-        ),
-      })
-      .then();
+    await transporter.sendMail({
+      from: {
+        name: 'HIGID',
+        address: process.env.MAIL_USER,
+      },
+      to: email,
+      subject: 'Email de verificación',
+      html: generateEmailConfirmPage(
+        process.env.FRONTEND_HOST +
+          `/confirm-account?email=${email}&token=${token}`,
+      ),
+    });
   }
 
   async login(loginDto: LoginDto) {
@@ -81,9 +79,11 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { email: data.email },
     });
+
     data.token = generateToken(8);
+
     if (user) {
-      if (!user.confirmed) this.sendMail(data.email, data.token);
+      if (!user.confirmed) await this.sendMail(data.email, data.token);
       else throw new HttpException('El usuario existe', HttpStatus.BAD_REQUEST);
     } else {
       if (!data.name || data.name == '') {
@@ -97,7 +97,7 @@ export class AuthService {
         data,
       });
 
-      this.sendMail(data.email, data.token);
+      await this.sendMail(data.email, data.token);
     }
     return {
       message:
