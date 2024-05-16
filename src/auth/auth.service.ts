@@ -30,11 +30,11 @@ export class AuthService {
     const user = await this.usersService.findOneByEmail(loginDto.email);
 
     if (!user||user?.password != loginDto.password) {
-      throw new HttpException('El usuario no existe o la contraseña es incorrecta', HttpStatus.NOT_FOUND);
+      throw new HttpException('El usuario no existe o la contraseña es incorrecta.', HttpStatus.NOT_FOUND);
     }
 
     if (!user?.confirmed) {
-      throw new HttpException('No esta confirmado', HttpStatus.I_AM_A_TEAPOT);
+      throw new HttpException('Cuenta sin confirmar.', HttpStatus.CONFLICT);
     }
 
     const payload = { id: user.id, name: user.name };
