@@ -83,8 +83,15 @@ export class AuthService {
     data.token = generateToken(8);
 
     if (user) {
-      if (!user.confirmed) await this.sendMail(data.email, data.token);
-      else throw new HttpException('El usuario existe', HttpStatus.BAD_REQUEST);
+      if (!user.confirmed) {
+        await this.sendMail(data.email, data.token);
+        await this.prisma.user.update({
+          where: { email: data.email },
+          data: { token: data.token },
+        });
+      } else {
+        throw new HttpException('El usuario existe', HttpStatus.BAD_REQUEST);
+      }
     } else {
       if (!data.name || data.name == '') {
         data.name = data.email.split('@')[0];
