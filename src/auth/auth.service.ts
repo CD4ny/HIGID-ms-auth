@@ -1,15 +1,41 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import SMTPTransport from 'nodemailer/lib/smtp-transport';
-import * as nodemailer from 'nodemailer';
 import * as bcrypt from 'bcryptjs';
 
 import { RegisterDto } from './dto/register.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { UsersService } from '../users/users.service';
-import generateEmailConfirmPage from '../utils/generateEmail';
+import {
+  generateConfirmAccountEmail,
+  generateForgotPasswordEmail,
+} from './utils';
 import { generateToken } from 'src/utils/token';
+import { sendEmail } from 'src/utils/email';
+
+const sendConfirmAccountEmail = async (email: string, token: string) => {
+  await sendEmail({
+    name: 'HIGID',
+    to: email,
+    subject: 'Email de verificación',
+    html: generateConfirmAccountEmail(
+      process.env.FRONTEND_HOST +
+        `/confirm-account?email=${email}&token=${token}`,
+    ),
+  });
+};
+
+const sendForgotPasswordEmail = async (email: string, token: string) => {
+  await sendEmail({
+    name: 'HIGID',
+    to: email,
+    subject: 'Restablecer contraseña',
+    html: generateForgotPasswordEmail(
+      process.env.FRONTEND_HOST +
+        `/forgot-password?email=${email}&token=${token}`,
+    ),
+  });
+};
 
 @Injectable()
 export class AuthService {
@@ -18,34 +44,6 @@ export class AuthService {
     private jwtService: JwtService,
     private usersService: UsersService,
   ) {}
-
-  async sendMail(email: string, token: string) {
-    const nodemailerOptions: SMTPTransport.Options = {
-      service: 'gmail',
-      host: process.env.MAIL_HOST,
-      port: Number.parseInt(process.env.MAIL_PORT),
-      secure: false,
-      auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASSWORD,
-      },
-    };
-
-    const transporter = nodemailer.createTransport(nodemailerOptions);
-
-    await transporter.sendMail({
-      from: {
-        name: 'HIGID',
-        address: process.env.MAIL_USER,
-      },
-      to: email,
-      subject: 'Email de verificación',
-      html: generateEmailConfirmPage(
-        process.env.FRONTEND_HOST +
-          `/confirm-account?email=${email}&token=${token}`,
-      ),
-    });
-  }
 
   async login(loginDto: LoginDto) {
     const user = await this.usersService.findOneByEmail(loginDto.email);
@@ -84,7 +82,7 @@ export class AuthService {
 
     if (user) {
       if (!user.confirmed) {
-        await this.sendMail(data.email, data.token);
+        await sendConfirmAccountEmail(data.email, data.token);
         await this.prisma.user.update({
           where: { email: data.email },
           data: { token: data.token },
@@ -104,7 +102,7 @@ export class AuthService {
         data,
       });
 
-      await this.sendMail(data.email, data.token);
+      await sendConfirmAccountEmail(data.email, data.token);
     }
     return {
       message:
