@@ -88,8 +88,8 @@ export class AuthService {
         to: data.email,
         subject: 'Email de verificación',
         html: await this.generateEmailConfirmPage(
-          process.env.HOST +
-            `/auth/confirm-account/${data.email}/${data.token}`,
+          process.env.FRONTEND_HOST +
+            `/confirm-account/${data.email}/${data.token}`,
         ),
       })
       .then();
@@ -115,17 +115,27 @@ export class AuthService {
   }
 
   async confirmAccount(email: string, token: string) {
-    let user = await this.prisma.user.findUnique({ where: { email: email } });
+    let user = await this.prisma.user.findUnique({ where: { email } });
 
-    if (!user || (!user?.confirmed && user?.active) || user.token === token)
+    if (!user || !user?.active)
       throw new HttpException(
-        'El usuario no existe o el token es incorrecto',
+        'El usuario no existe o no esta activo',
+        HttpStatus.NOT_FOUND,
+      );
+    else if (user?.confirmed) {
+      throw new HttpException(
+        'El usuario ya esta confirmado',
+        HttpStatus.BAD_REQUEST,
+      );
+    } else if (user.token !== token)
+      throw new HttpException(
+        'El token es incorrecto',
         HttpStatus.BAD_REQUEST,
       );
     else
       await this.prisma.user.update({
         where: { email: email },
-        data: { token: null, active: true },
+        data: { token: null, confirmed: true },
       });
     return this.login(user);
   }
