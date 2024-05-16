@@ -35,10 +35,9 @@ export class AuthService {
       throw new HttpException('Cuenta sin confirmar.', HttpStatus.CONFLICT);
     }
 
-    const payload = { id: user.id, name: user.name };
+    const payload = { id: user.id };
 
-    const accessToken =
-      await this.jwtService.signAsync(payload)['access_token'];
+    const accessToken = await this.jwtService.signAsync(payload);
 
     return { id: user.id, email: user.email, name: user.name, accessToken };
   }
