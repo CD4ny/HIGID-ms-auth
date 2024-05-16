@@ -14,8 +14,6 @@ import SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 @Injectable()
 export class AuthService {
-  function;
-
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -31,9 +29,14 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const user = await this.usersService.findOneByEmail(loginDto.email);
 
-    if (user?.password != loginDto.password) {
-      throw new UnauthorizedException();
+    if (!user||user?.password != loginDto.password) {
+      throw new HttpException('El usuario no existe o la contraseña es incorrecta', HttpStatus.NOT_FOUND);
     }
+
+    if (!user?.confirmed) {
+      throw new HttpException('No esta confirmado', HttpStatus.I_AM_A_TEAPOT);
+    }
+
     const payload = { id: user.id, name: user.name };
     return await this.jwtService.signAsync(payload);
   }
@@ -116,10 +119,10 @@ export class AuthService {
     else
       await this.prisma.user.update({
         where: { email: email },
-        data: { token: null , active :true },
+        data: { token: null, active: true },
       });
     return this.login(user);
   }
 
-  async forgotPassword(forgotPasswordDto: LoginDto) {}
+  // async forgotPassword(forgotPasswordDto: LoginDto) {}
 }
