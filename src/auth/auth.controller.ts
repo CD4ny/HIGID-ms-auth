@@ -28,7 +28,8 @@ export class AuthController {
       email,
       activation_token,
     );
-    res.json({ msg: `Cuenta ${email} confirmada` }, token);
+
+    return res.json(token);
   }
 
   @Post('forgot-password/:email/:token')

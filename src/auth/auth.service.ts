@@ -1,12 +1,15 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import SMTPTransport from 'nodemailer/lib/smtp-transport';
+import * as nodemailer from 'nodemailer';
+import * as bcrypt from 'bcryptjs';
+
 import { RegisterDto } from './dto/register.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { UsersService } from '../users/users.service';
-import { JwtService } from '@nestjs/jwt';
-import * as nodemailer from 'nodemailer';
-import SMTPTransport from 'nodemailer/lib/smtp-transport';
-import * as bcrypt from 'bcryptjs';
+import generateEmailConfirmPage from '../utils/generateEmail';
+import { generateToken } from 'src/utils/token';
 
 @Injectable()
 export class AuthService {
@@ -15,12 +18,6 @@ export class AuthService {
     private jwtService: JwtService,
     private usersService: UsersService,
   ) {}
-
-  generateToken(length: number) {
-    return Math.random()
-      .toString(36)
-      .substring(2, length + 2);
-  }
 
   sendMail(email: string, token: string) {
     const nodemailerOptions: SMTPTransport.Options = {
@@ -44,8 +41,9 @@ export class AuthService {
         },
         to: email,
         subject: 'Email de verificación',
-        html: this.generateEmailConfirmPage(
-          process.env.FRONTEND_HOST + `/confirm-account/${email}/${token}`,
+        html: generateEmailConfirmPage(
+          process.env.FRONTEND_HOST +
+            `/confirm-account?email=${email}&token=${token}`,
         ),
       })
       .then();
@@ -53,9 +51,15 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const user = await this.usersService.findOneByEmail(loginDto.email);
+    if (!user)
+      throw new HttpException(
+        'El usuario no existe o la contraseña es incorrecta.',
+        HttpStatus.NOT_FOUND,
+      );
+
     const match = await bcrypt.compare(loginDto.password, user.password);
 
-    if (!user || !match) {
+    if (!match) {
       throw new HttpException(
         'El usuario no existe o la contraseña es incorrecta.',
         HttpStatus.NOT_FOUND,
@@ -77,7 +81,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { email: data.email },
     });
-    data.token = this.generateToken(8);
+    data.token = generateToken(8);
     if (user) {
       if (!user.confirmed) this.sendMail(data.email, data.token);
       else throw new HttpException('El usuario existe', HttpStatus.BAD_REQUEST);
@@ -101,42 +105,27 @@ export class AuthService {
     };
   }
 
-  generateEmailConfirmPage(url: string) {
-    return `<div>
-              <h1>Confirmación de Correo Electrónico</h1>
-              <p>
-                Por favor, haz clic en el botón de abajo 
-                para confirmar tu dirección de correo electrónico.
-              </p>
-              <a href="${url}"
-              style="display:inline-block; padding:10px 20px; 
-              background-color:#007BFF; color:#FFFFFF; 
-              text-decoration:none; border-radius:5px;">
-              Confirmar correo</a>
-            </div>`;
-  }
-
   async confirmAccount(email: string, token: string) {
-    let user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({ where: { email } });
 
-    if (!user || !user?.active)
+    if (!user || !user?.active) {
       throw new HttpException(
         'El usuario no existe o no esta activo',
         HttpStatus.NOT_FOUND,
       );
-    else if (user?.confirmed) {
+    } else if (user?.confirmed) {
       throw new HttpException(
         'El usuario ya esta confirmado',
         HttpStatus.BAD_REQUEST,
       );
-    } else if (user.token !== token)
+    } else if (user.token !== token) {
       throw new HttpException('El token es incorrecto', HttpStatus.BAD_REQUEST);
-    else
-      await this.prisma.user.update({
+    } else {
+      return await this.prisma.user.update({
         where: { email: email },
         data: { token: null, confirmed: true },
       });
-    return this.login(user);
+    }
   }
 
   // async forgotPassword(forgotPasswordDto: LoginDto) {}

@@ -12,7 +12,9 @@ const PORT = parseInt(process.env.PORT) || 5001;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  // todo: remove cors and set up proxy
   app.enableCors();
+
   // const apiPath: string = 'auth';
   // app.setGlobalPrefix(apiPath);
   if (process.env.SWAGGER !== 'false') {
@@ -36,6 +38,7 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       exceptionFactory: (errors) => {
+        // eslint-disable-next-line no-console
         console.error('Validation errors:', JSON.stringify(errors));
         return new BadRequestException(errors);
       },
@@ -46,5 +49,5 @@ async function bootstrap() {
 
 bootstrap().then(() =>
   // eslint-disable-next-line no-console
-  console.log('Servidor corriendo en http://localhost:' + PORT),
+  console.log('Server running on', PORT),
 );
