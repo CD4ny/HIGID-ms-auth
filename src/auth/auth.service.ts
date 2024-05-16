@@ -16,10 +16,39 @@ export class AuthService {
     private usersService: UsersService,
   ) {}
 
-  async generateToken(length: number) {
+  generateToken(length: number) {
     return Math.random()
       .toString(36)
       .substring(2, length + 2);
+  }
+
+  sendMail(email: string, token: string) {
+    const nodemailerOptions: SMTPTransport.Options = {
+      service: 'gmail',
+      host: process.env.MAIL_HOST,
+      port: Number.parseInt(process.env.MAIL_PORT),
+      secure: false,
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASSWORD,
+      },
+    };
+
+    const transporter = nodemailer.createTransport(nodemailerOptions);
+
+    transporter
+      .sendMail({
+        from: {
+          name: 'HIGID',
+          address: process.env.MAIL_USER,
+        },
+        to: email,
+        subject: 'Email de verificación',
+        html: this.generateEmailConfirmPage(
+          process.env.FRONTEND_HOST + `/confirm-account/${email}/${token}`,
+        ),
+      })
+      .then();
   }
 
   async login(loginDto: LoginDto) {
@@ -50,56 +79,31 @@ export class AuthService {
     });
 
     if (user) {
-      throw new HttpException('El usuario existe', HttpStatus.BAD_REQUEST);
+      if (!user.confirmed) this.sendMail(data.email, data.token);
+      else throw new HttpException('El usuario existe', HttpStatus.BAD_REQUEST);
+    } else {
+      if (!data.name || data.name == '') {
+        data.name = data.email.split('@')[0];
+      }
+
+      data.token = this.generateToken(8);
+
+      const salt = bcrypt.genSaltSync(10);
+      data.password = bcrypt.hashSync(data.password, salt);
+
+      await this.prisma.user.create({
+        data,
+      });
+
+      this.sendMail(data.email, data.token);
     }
-
-    if (!data.name || data.name == '') {
-      data.name = data.email.split('@')[0];
-    }
-
-    data.token = await this.generateToken(8);
-
-    const salt = bcrypt.genSaltSync(10);
-    data.password = bcrypt.hashSync(data.password, salt);
-
-    await this.prisma.user.create({
-      data,
-    });
-
-    const nodemailerOptions: SMTPTransport.Options = {
-      service: 'gmail',
-      host: process.env.MAIL_HOST,
-      port: Number.parseInt(process.env.MAIL_PORT),
-      secure: false,
-      auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASSWORD,
-      },
-    };
-
-    const transporter = nodemailer.createTransport(nodemailerOptions);
-
-    transporter
-      .sendMail({
-        from: {
-          name: 'HIGID',
-          address: process.env.MAIL_USER,
-        },
-        to: data.email,
-        subject: 'Email de verificación',
-        html: await this.generateEmailConfirmPage(
-          process.env.FRONTEND_HOST +
-            `/confirm-account/${data.email}/${data.token}`,
-        ),
-      })
-      .then();
     return {
       message:
         'Le hemos enviado un correo electrónico. Por favor, revise su bandeja de entrada y siga las instrucciones para confirmar su cuenta.',
     };
   }
 
-  async generateEmailConfirmPage(url: string) {
+  generateEmailConfirmPage(url: string) {
     return `<div>
               <h1>Confirmación de Correo Electrónico</h1>
               <p>
@@ -128,10 +132,7 @@ export class AuthService {
         HttpStatus.BAD_REQUEST,
       );
     } else if (user.token !== token)
-      throw new HttpException(
-        'El token es incorrecto',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new HttpException('El token es incorrecto', HttpStatus.BAD_REQUEST);
     else
       await this.prisma.user.update({
         where: { email: email },
