@@ -77,7 +77,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { email: data.email },
     });
-
+    data.token = this.generateToken(8);
     if (user) {
       if (!user.confirmed) this.sendMail(data.email, data.token);
       else throw new HttpException('El usuario existe', HttpStatus.BAD_REQUEST);
@@ -85,8 +85,6 @@ export class AuthService {
       if (!data.name || data.name == '') {
         data.name = data.email.split('@')[0];
       }
-
-      data.token = this.generateToken(8);
 
       const salt = bcrypt.genSaltSync(10);
       data.password = bcrypt.hashSync(data.password, salt);
