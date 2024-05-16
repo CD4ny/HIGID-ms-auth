@@ -1,8 +1,4 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { RegisterDto } from './dto/register.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
@@ -28,8 +24,11 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const user = await this.usersService.findOneByEmail(loginDto.email);
 
-    if (!user||user?.password != loginDto.password) {
-      throw new HttpException('El usuario no existe o la contraseña es incorrecta.', HttpStatus.NOT_FOUND);
+    if (!user || user?.password != loginDto.password) {
+      throw new HttpException(
+        'El usuario no existe o la contraseña es incorrecta.',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     if (!user?.confirmed) {
@@ -37,7 +36,11 @@ export class AuthService {
     }
 
     const payload = { id: user.id, name: user.name };
-    return await this.jwtService.signAsync(payload);
+
+    const accessToken =
+      await this.jwtService.signAsync(payload)['access_token'];
+
+    return { id: user.id, email: user.email, name: user.name, accessToken };
   }
 
   async register(data: RegisterDto) {
