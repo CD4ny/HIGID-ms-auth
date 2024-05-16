@@ -13,30 +13,6 @@ import {
 import { generateToken } from 'src/utils/token';
 import { sendEmail } from 'src/utils/email';
 
-const sendConfirmAccountEmail = async (email: string, token: string) => {
-  await sendEmail({
-    name: 'HIGID',
-    to: email,
-    subject: 'Email de verificación',
-    html: generateConfirmAccountEmail(
-      process.env.FRONTEND_HOST +
-        `/confirm-account?email=${email}&token=${token}`,
-    ),
-  });
-};
-
-const sendForgotPasswordEmail = async (email: string, token: string) => {
-  await sendEmail({
-    name: 'HIGID',
-    to: email,
-    subject: 'Restablecer contraseña',
-    html: generateForgotPasswordEmail(
-      process.env.FRONTEND_HOST +
-        `/forgot-password?email=${email}&token=${token}`,
-    ),
-  });
-};
-
 @Injectable()
 export class AuthService {
   constructor(
@@ -82,7 +58,6 @@ export class AuthService {
 
     if (user) {
       if (!user.confirmed) {
-        await sendConfirmAccountEmail(data.email, data.token);
         await this.prisma.user.update({
           where: { email: data.email },
           data: { token: data.token },
@@ -101,9 +76,18 @@ export class AuthService {
       await this.prisma.user.create({
         data,
       });
-
-      await sendConfirmAccountEmail(data.email, data.token);
     }
+
+    await sendEmail({
+      name: 'HIGID',
+      to: data.email,
+      subject: 'Email de verificación',
+      html: generateConfirmAccountEmail(
+        process.env.FRONTEND_HOST +
+          `/confirm-account?email=${data.email}&token=${data.token}`,
+      ),
+    });
+
     return {
       message:
         'Le hemos enviado un correo electrónico. Por favor, revise su bandeja de entrada y siga las instrucciones para confirmar su cuenta.',
@@ -134,4 +118,13 @@ export class AuthService {
   }
 
   // async forgotPassword(forgotPasswordDto: LoginDto) {}
+  // await sendEmail({
+  //   name: 'HIGID',
+  //   to: email,
+  //   subject: 'Restablecer contraseña',
+  //   html: generateForgotPasswordEmail(
+  //     process.env.FRONTEND_HOST +
+  //       `/forgot-password?email=${email}&token=${token}`,
+  //   ),
+  // });
 }
