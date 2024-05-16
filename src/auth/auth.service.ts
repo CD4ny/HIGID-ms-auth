@@ -59,7 +59,9 @@ export class AuthService {
 
     data.token = await this.generateToken(8);
 
-    data.password = bcrypt.hashSync(data.password, 10);
+    const salt = bcrypt.genSaltSync(10);
+    data.password = bcrypt.hashSync(data.password,salt);
+
 
     await this.prisma.user.create({
       data,
