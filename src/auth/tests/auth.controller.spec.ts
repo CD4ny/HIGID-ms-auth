@@ -9,7 +9,6 @@ import * as faker from 'faker';
 
 export function generateFakeUser(): RegisterDto {
   return {
-    id: faker.datatype.uuid(),
     name: faker.name.firstName(),
     surname: faker.name.lastName(),
     email: faker.internet.email(),

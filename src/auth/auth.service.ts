@@ -116,7 +116,7 @@ export class AuthService {
     else
       await this.prisma.user.update({
         where: { email: email },
-        data: { token: null },
+        data: { token: null , active :true },
       });
     return this.login(user);
   }
