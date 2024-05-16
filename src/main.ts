@@ -8,7 +8,7 @@ import {
 import 'dotenv/config';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 
-const PORT = process.env.PORT || 5001;
+const PORT = parseInt(process.env.PORT) || 5001;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -46,5 +46,5 @@ async function bootstrap() {
 
 bootstrap().then(() =>
   // eslint-disable-next-line no-console
-  console.log('Servidor corriendo en http://localhost:' + { PORT }),
+  console.log('Servidor corriendo en http://localhost:' + PORT),
 );
