@@ -34,7 +34,7 @@ export class AuthController {
 
   @Post('forgot-password/:email/:token')
   async forgotPassword(@Body() forgotPasswordDto: LoginDto) {
-    await this.authService.forgotPassword(forgotPasswordDto);
+    // await this.authService.forgotPassword(forgotPasswordDto);
     return { message: 'Password reset instructions sent' };
   }
 }
