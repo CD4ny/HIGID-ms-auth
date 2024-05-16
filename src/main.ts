@@ -8,11 +8,13 @@ import {
 import 'dotenv/config';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 
+const PORT = process.env.PORT || 5001;
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
-  const apiPath: string = 'auth';
-  app.setGlobalPrefix(apiPath);
+  // const apiPath: string = 'auth';
+  // app.setGlobalPrefix(apiPath);
   if (process.env.SWAGGER !== 'false') {
     const options = new DocumentBuilder()
       .addBearerAuth()
@@ -39,12 +41,10 @@ async function bootstrap() {
       },
     }),
   );
-  await app.listen(process.env.PORT || 5000);
+  await app.listen(PORT);
 }
 
 bootstrap().then(() =>
   // eslint-disable-next-line no-console
-  console.log(
-    'Server is running on http://localhost:' + process.env.PORT || 5000,
-  ),
+  console.log('Servidor corriendo en http://localhost:' + { PORT }),
 );
