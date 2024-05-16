@@ -6,6 +6,7 @@ import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as nodemailer from 'nodemailer';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
+import bcrypt from 'bcryptjs';
 
 @Injectable()
 export class AuthService {
@@ -23,8 +24,9 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const user = await this.usersService.findOneByEmail(loginDto.email);
+    const match = bcrypt.compare(loginDto.password, user.password);
 
-    if (!user || user?.password != loginDto.password) {
+    if (!user || match) {
       throw new HttpException(
         'El usuario no existe o la contraseña es incorrecta.',
         HttpStatus.NOT_FOUND,
@@ -43,7 +45,7 @@ export class AuthService {
   }
 
   async register(data: RegisterDto) {
-    let user = await this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { email: data.email },
     });
 
@@ -56,6 +58,8 @@ export class AuthService {
     }
 
     data.token = await this.generateToken(8);
+
+    data.password = await bcrypt.hashSync(data['password'], 10);
 
     await this.prisma.user.create({
       data,
