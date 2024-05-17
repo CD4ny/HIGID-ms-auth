@@ -1,8 +1,21 @@
-import { Body, Controller, HttpStatus, Param, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResetDto } from './dto/reset.dto';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
@@ -41,5 +54,14 @@ export class AuthController {
   @Post('reset-password')
   async resetPassword(@Body() register: ResetDto) {
     return await this.authService.resetPassword(register);
+  }
+
+  @ApiOperation({ summary: 'UserInfo' })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Get('info-user')
+  async isUserLogged(@Headers('authorization') token: string) {
+    return this.authService.isUserLogged(token);
   }
 }

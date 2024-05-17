@@ -13,6 +13,7 @@ import {
 import { generateToken } from 'src/utils/token';
 import { sendEmail } from 'src/utils/email';
 import { ResetDto } from './dto/reset.dto';
+import { AuthGuard } from './auth.guard';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +21,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private usersService: UsersService,
+    private authGuard: AuthGuard,
   ) {}
 
   async login(loginDto: LoginDto) {
@@ -174,5 +176,23 @@ export class AuthService {
         data: { token: null, password: newPassword },
       });
     }
+  }
+
+  async isUserLogged(req: string): Promise<{
+    id: any;
+    email: string;
+    accessToken: string;
+  }> {
+    const token = this.authGuard.extractTokenFromHeader(req);
+    let payload = this.jwtService.decode(token);
+    const id = payload.id;
+    const user = await this.prisma.user.findUnique({ where: { id } });
+
+    payload = { id: user?.id };
+    return {
+      accessToken: this.jwtService.sign(payload),
+      id: user.id,
+      email: user.email,
+    };
   }
 }
