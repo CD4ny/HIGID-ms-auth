@@ -142,7 +142,7 @@ export class AuthService {
       subject: 'Email de reestablecimiento de contraseña',
       html: generateForgotPasswordEmail(
         process.env.FRONTEND_HOST +
-          `/confirm-account?email=${email}&token=${token}`,
+          `/forgot-password?email=${email}&token=${token}`,
       ),
     });
 
