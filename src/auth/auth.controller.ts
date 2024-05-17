@@ -8,10 +8,8 @@ import {
   Param,
   Post,
   Res,
-  UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -58,7 +56,6 @@ export class AuthController {
 
   @ApiOperation({ summary: 'UserInfo' })
   @ApiBearerAuth()
-  @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
   @Get('info-user')
   async isUserLogged(@Headers('authorization') token: string) {

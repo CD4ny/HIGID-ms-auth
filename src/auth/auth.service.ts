@@ -187,7 +187,12 @@ export class AuthService {
     let payload = this.jwtService.decode(token);
     const id = payload.id;
     const user = await this.prisma.user.findUnique({ where: { id } });
-
+    if (!user) {
+      throw new HttpException(
+        'El usuario no existe, por favor registrarse en el sistema',
+        HttpStatus.NOT_FOUND,
+      );
+    }
     payload = { id: user?.id };
     return {
       accessToken: this.jwtService.sign(payload),
