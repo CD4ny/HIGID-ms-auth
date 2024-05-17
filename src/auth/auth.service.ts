@@ -12,6 +12,7 @@ import {
 } from './utils';
 import { generateToken } from 'src/utils/token';
 import { sendEmail } from 'src/utils/email';
+import { ResetDto } from './dto/reset.dto';
 
 @Injectable()
 export class AuthService {
@@ -110,21 +111,68 @@ export class AuthService {
     } else if (user.token !== token) {
       throw new HttpException('El token es incorrecto', HttpStatus.BAD_REQUEST);
     } else {
-      return await this.prisma.user.update({
+      return this.prisma.user.update({
         where: { email: email },
         data: { token: null, confirmed: true },
       });
     }
   }
 
-  // async forgotPassword(forgotPasswordDto: LoginDto) {}
-  // await sendEmail({
-  //   name: 'HIGID',
-  //   to: email,
-  //   subject: 'Restablecer contraseña',
-  //   html: generateForgotPasswordEmail(
-  //     process.env.FRONTEND_HOST +
-  //       `/forgot-password?email=${email}&token=${token}`,
-  //   ),
-  // });
+  async forgotPassword(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    const token = generateToken(8);
+
+    if (!user || !user.active || !user.confirmed) {
+      throw new HttpException(
+        'El usuario no existe, por favor registrarse en el sistema',
+        HttpStatus.NOT_FOUND,
+      );
+    } else {
+      await this.prisma.user.update({
+        where: { email },
+        data: { token },
+      });
+    }
+
+    await sendEmail({
+      name: 'HIGID Seguridad',
+      to: email,
+      subject: 'Email de reestablecimiento de contraseña',
+      html: generateForgotPasswordEmail(
+        process.env.FRONTEND_HOST +
+          `/confirm-account?email=${email}&token=${token}`,
+      ),
+    });
+
+    return {
+      message:
+        'Le hemos enviado un correo electrónico. Por favor, revise su bandeja de entrada y siga las instrucciones para reestablecer su contraseña.',
+    };
+  }
+
+  async resetPassword(data: ResetDto) {
+    const { email, token, password } = data;
+
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user || !user.active || !user.confirmed) {
+      throw new HttpException(
+        'El usuario no existe, por favor registrarse en el sistema',
+        HttpStatus.NOT_FOUND,
+      );
+    } else if (user.token !== token) {
+      throw new HttpException('El token es incorrecto', HttpStatus.BAD_REQUEST);
+    } else {
+      const salt = bcrypt.genSaltSync(10);
+
+      const newPassword = bcrypt.hashSync(password, salt);
+
+      return this.prisma.user.update({
+        where: { email: email },
+        data: { token: null, password: newPassword },
+      });
+    }
+  }
 }
