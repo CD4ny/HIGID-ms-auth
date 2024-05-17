@@ -8,6 +8,6 @@ import { AuthGuard } from './auth.guard';
 @Module({
   imports: [],
   controllers: [AuthController],
-  providers: [AuthService, PrismaService, UsersService , AuthGuard],
+  providers: [AuthService, PrismaService, UsersService, AuthGuard],
 })
 export class AuthModule {}
