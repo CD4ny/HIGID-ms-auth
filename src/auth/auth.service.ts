@@ -180,6 +180,7 @@ export class AuthService {
 
   async isUserLogged(req: string): Promise<{
     id: any;
+    name: string;
     email: string;
     accessToken: string;
   }> {
@@ -196,6 +197,7 @@ export class AuthService {
     payload = { id: user?.id };
     return {
       accessToken: this.jwtService.sign(payload),
+      name: user.name,
       id: user.id,
       email: user.email,
     };
