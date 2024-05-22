@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -21,7 +22,8 @@ export class AuthGuard implements CanActivate {
       request['user'] = await this.jwtService.verifyAsync(token, {
         secret: process.env.JWT_SECRET,
       });
-    } catch {
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') throw new ForbiddenException();
       throw new UnauthorizedException();
     }
     return true;
