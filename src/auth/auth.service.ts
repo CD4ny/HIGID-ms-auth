@@ -49,6 +49,11 @@ export class AuthService {
 
     const accessToken = await this.jwtService.signAsync(payload);
 
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { token: accessToken },
+    });
+
     return { id: user.id, email: user.email, name: user.name, accessToken };
   }
 
@@ -178,14 +183,10 @@ export class AuthService {
     }
   }
 
-  async isUserLogged(req: string): Promise<{
-    id: any;
-    name: string;
-    email: string;
-    accessToken: string;
-  }> {
+  async logout(req: string): Promise<{ message: string }> {
     const token = this.authGuard.extractTokenFromHeader(req);
-    let payload = this.jwtService.decode(token);
+
+    const payload = await this.jwtService.decode(token);
     const id = payload.id;
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) {
@@ -194,9 +195,46 @@ export class AuthService {
         HttpStatus.NOT_FOUND,
       );
     }
-    payload = { id: user?.id };
+
+    if (user.token !== token || user.token === null) {
+      throw new HttpException(
+        'El usuario no esta autenticado',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    await this.prisma.user.update({
+      where: { id },
+      data: { token: null },
+    });
+
+    return { message: 'El usuario ha cerrado la autenticacion correctamente.' };
+  }
+
+  async isUserLogged(req: string): Promise<{
+    id: any;
+    name: string;
+    email: string;
+  }> {
+    const token = this.authGuard.extractTokenFromHeader(req);
+    // const verify = this.jwtService.verify(token);
+
+    const payload = this.jwtService.decode(token);
+    const id = payload.id;
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new HttpException(
+        'El usuario no existe, por favor registrarse en el sistema',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (user.token !== token) {
+      throw new HttpException(
+        'El usuario no esta autenticado',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     return {
-      accessToken: this.jwtService.sign(payload),
       name: user.name,
       id: user.id,
       email: user.email,

@@ -57,8 +57,15 @@ export class AuthController {
   @ApiOperation({ summary: 'UserInfo' })
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
-  @Get('info-user')
+  @Get('verify')
   async isUserLogged(@Headers('authorization') token: string) {
     return this.authService.isUserLogged(token);
+  }
+
+  @ApiOperation({ summary: 'logout' })
+  @HttpCode(HttpStatus.OK)
+  @Get('logout')
+  async logout(@Headers('authorization') token: string) {
+    return this.authService.logout(token);
   }
 }
