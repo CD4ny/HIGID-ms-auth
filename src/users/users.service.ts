@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -26,10 +27,17 @@ export class UsersService {
     return this.prisma.user.findMany();
   }
 
-  async update(id: string, data: Partial<CreateUserDto>) {
+  async update(id: string, data: UpdateUserDto) {
+    const { name, surname, fileChanged, filePath } = data;
+
+    const newData = { name, surname };
+
+    if (!filePath && fileChanged === 'true') newData['picture'] = null;
+    else if (filePath) newData['picture'] = filePath;
+
     return this.prisma.user.update({
       where: { id },
-      data,
+      data: newData,
     });
   }
 

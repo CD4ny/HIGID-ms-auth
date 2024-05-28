@@ -54,7 +54,14 @@ export class AuthService {
       data: { token: accessToken },
     });
 
-    return { id: user.id, email: user.email, name: user.name, accessToken };
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      surname: user.surname,
+      accessToken,
+      picture: user.picture,
+    };
   }
 
   async register(data: RegisterDto) {
@@ -146,7 +153,7 @@ export class AuthService {
     await sendEmail({
       name: 'HIGID Seguridad',
       to: email,
-      subject: 'Email de reestablecimiento de contraseña',
+      subject: 'Email de restablecimiento de contraseña',
       html: generateForgotPasswordEmail(
         process.env.FRONTEND_HOST +
           `/forgot-password?email=${email}&token=${token}`,
@@ -155,7 +162,7 @@ export class AuthService {
 
     return {
       message:
-        'Le hemos enviado un correo electrónico. Por favor, revise su bandeja de entrada y siga las instrucciones para reestablecer su contraseña.',
+        'Le hemos enviado un correo electrónico. Por favor, revise su bandeja de entrada y siga las instrucciones para restablecer su contraseña.',
     };
   }
 
@@ -207,14 +214,10 @@ export class AuthService {
       data: { token: null },
     });
 
-    return { message: 'El usuario ha cerrado la autenticacion correctamente.' };
+    return { message: 'El usuario ha cerrado la autenticación correctamente.' };
   }
 
-  async isUserLogged(req: string): Promise<{
-    id: any;
-    name: string;
-    email: string;
-  }> {
+  async isUserLogged(req: string) {
     const token = this.authGuard.extractTokenFromHeader(req);
     // const verify = this.jwtService.verify(token);
 
@@ -236,8 +239,10 @@ export class AuthService {
     }
     return {
       name: user.name,
+      surname: user.surname,
       id: user.id,
       email: user.email,
+      picture: user.picture,
     };
   }
 }
