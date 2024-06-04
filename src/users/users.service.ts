@@ -1,33 +1,67 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+  ) {}
 
-  async create(data: CreateUserDto) {
-    return this.prisma.user.create({
-      data,
-    });
-  }
+  async findOne(id: string, token: string) {
+    const payload = this.jwtService.decode(token);
+    const id_aux = payload.id;
+    const user = await this.prisma.user.findUnique({ where: { id: id_aux } });
 
-  async findOne(id: string) {
+    if (!user) {
+      throw new HttpException(
+        'El usuario no existe, por favor registrarse en el sistema',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (user.token !== token || !user.active) {
+      throw new HttpException(
+        'El usuario no esta autenticado',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     return this.prisma.user.findUnique({
       where: { id },
     });
   }
+
   async findOneByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: { email },
     });
   }
+
   async findAll() {
     return this.prisma.user.findMany();
   }
 
-  async update(id: string, data: UpdateUserDto) {
+  async update(id: string, data: UpdateUserDto, token: string) {
+    const payload = this.jwtService.decode(token);
+    const id_aux = payload.id;
+    const user = await this.prisma.user.findUnique({ where: { id: id_aux } });
+
+    if (!user) {
+      throw new HttpException(
+        'El usuario no existe, por favor registrarse en el sistema',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (user.token !== token || !user.active) {
+      throw new HttpException(
+        'El usuario no esta autenticado',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const { name, surname, fileChanged, filePath } = data;
 
     const newData = { name, surname };
@@ -41,9 +75,27 @@ export class UsersService {
     });
   }
 
-  async delete(id: string) {
-    return this.prisma.user.delete({
+  async delete(id: string, token: string) {
+    const payload = this.jwtService.decode(token);
+    const id_aux = payload.id;
+    const user = await this.prisma.user.findUnique({ where: { id: id_aux } });
+
+    if (!user) {
+      throw new HttpException(
+        'El usuario no existe, por favor registrarse en el sistema',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (user.token !== token || !user.active) {
+      throw new HttpException(
+        'El usuario no esta autenticado',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return this.prisma.user.update({
       where: { id },
+      data: { active: false },
     });
   }
 }

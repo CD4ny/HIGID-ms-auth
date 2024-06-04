@@ -8,12 +8,14 @@ import {
   Param,
   Post,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResetDto } from './dto/reset.dto';
+import { AuthGuard } from './auth.guard';
 
 @Controller()
 export class AuthController {
@@ -62,6 +64,7 @@ export class AuthController {
     return this.authService.isUserLogged(token);
   }
 
+  @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'logout' })
   @HttpCode(HttpStatus.OK)
   @Get('logout')
