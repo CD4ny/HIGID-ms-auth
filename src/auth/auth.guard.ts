@@ -19,10 +19,17 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
+
     const payload = this.jwtService.decode(token);
+
     const user = await this.prisma.user.findUnique({
       where: { id: payload.id },
     });
+
+    if (!user.active || !user.confirmed) {
+      throw new ForbiddenException();
+    }
+
     if (!token || user.token !== token) {
       throw new UnauthorizedException();
     }

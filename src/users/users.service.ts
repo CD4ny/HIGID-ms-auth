@@ -12,6 +12,11 @@ export class UsersService {
 
   async findOne(id: string, token: string) {
     const payload = this.jwtService.decode(token);
+
+    if (!payload.id) {
+      throw new HttpException('Must provide user id', HttpStatus.BAD_REQUEST);
+    }
+
     const id_aux = payload.id;
     const user = await this.prisma.user.findUnique({ where: { id: id_aux } });
 
@@ -43,8 +48,13 @@ export class UsersService {
     return this.prisma.user.findMany();
   }
 
-  async update(id: string, data: UpdateUserDto, token: string) {
+  async update(data: UpdateUserDto, token: string) {
     const payload = this.jwtService.decode(token);
+
+    if (!payload.id) {
+      throw new HttpException('Must provide user id', HttpStatus.BAD_REQUEST);
+    }
+
     const id_aux = payload.id;
     const user = await this.prisma.user.findUnique({ where: { id: id_aux } });
 
@@ -70,13 +80,18 @@ export class UsersService {
     else if (filePath) newData['picture'] = filePath;
 
     return this.prisma.user.update({
-      where: { id },
+      where: { id: user.id },
       data: newData,
     });
   }
 
-  async delete(id: string, token: string) {
+  async delete(token: string) {
     const payload = this.jwtService.decode(token);
+
+    if (!payload.id) {
+      throw new HttpException('Must provide user id', HttpStatus.BAD_REQUEST);
+    }
+
     const id_aux = payload.id;
     const user = await this.prisma.user.findUnique({ where: { id: id_aux } });
 
@@ -94,7 +109,7 @@ export class UsersService {
       );
     }
     return this.prisma.user.update({
-      where: { id },
+      where: { id: user.id },
       data: { active: false },
     });
   }

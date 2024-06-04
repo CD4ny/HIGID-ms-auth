@@ -26,7 +26,7 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const user = await this.usersService.findOneByEmail(loginDto.email);
-    if (!user)
+    if (!user || !user.active)
       throw new HttpException(
         'El usuario no existe o la contraseña es incorrecta.',
         HttpStatus.NOT_FOUND,
@@ -70,12 +70,19 @@ export class AuthService {
     });
 
     data.token = generateToken(8);
+    const salt = bcrypt.genSaltSync(10);
+    data.password = bcrypt.hashSync(data.password, salt);
 
     if (user) {
-      if (!user.confirmed) {
+      if (!user.confirmed || !user.active) {
         await this.prisma.user.update({
           where: { email: data.email },
-          data: { token: data.token },
+          data: {
+            token: data.token,
+            active: true,
+            confirmed: false,
+            password: data.password,
+          },
         });
       } else {
         throw new HttpException('El usuario existe', HttpStatus.BAD_REQUEST);
@@ -84,9 +91,6 @@ export class AuthService {
       if (!data.name || data.name == '') {
         data.name = data.email.split('@')[0];
       }
-
-      const salt = bcrypt.genSaltSync(10);
-      data.password = bcrypt.hashSync(data.password, salt);
 
       await this.prisma.user.create({
         data,
@@ -224,6 +228,11 @@ export class AuthService {
     const payload = this.jwtService.decode(token);
     const id = payload.id;
     const user = await this.prisma.user.findUnique({ where: { id } });
+
+    if (!user.active || !user.confirmed) {
+      throw new HttpException('', HttpStatus.FORBIDDEN);
+    }
+
     if (!user) {
       throw new HttpException(
         'El usuario no existe, por favor registrarse en el sistema',
