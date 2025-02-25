@@ -23,7 +23,7 @@
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
 ## Description
-
+Cuando Comenzamos este proyecto solo Dios y Yo sabiamos que hacia cada linea de codigo, Ahora Solo Dios Sabe!.
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
 ## Installation
